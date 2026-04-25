@@ -14,9 +14,10 @@ class FileQueue(ctk.CTkFrame):
         "failed": THEME["error"],
     }
 
-    def __init__(self, parent, on_remove=None, **kwargs):
+    def __init__(self, parent, on_remove=None, on_stop=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         self.on_remove = on_remove
+        self.on_stop = on_stop
         self.rows = {}
         self._build_ui()
 
@@ -79,7 +80,7 @@ class FileQueue(ctk.CTkFrame):
 
     def _on_stop_all(self):
         """Emit stop signal to the parent handler."""
-        if hasattr(self, "on_stop") and self.on_stop:
+        if self.on_stop:
             self.on_stop()
 
     def add_files(self, file_infos):
