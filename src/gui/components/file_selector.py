@@ -1,7 +1,9 @@
 """File selection component with native dialog and drag-and-drop."""
 
+import re
 import customtkinter as ctk
 from tkinter import filedialog
+from tkinterdnd2 import DND_FILES
 from config import THEME
 from utils.file_utils import get_file_info
 
@@ -57,7 +59,11 @@ class FileSelector(ctk.CTkFrame):
         )
         browse_btn.pack(pady=(5, 20))
 
-        # Bind drag-and-drop (basic highlight effect; full DnD in Phase 7)
+        # Register drag-and-drop
+        self.drop_frame.drop_target_register(DND_FILES)
+        self.drop_frame.dnd_bind("<<Drop>>", self._on_drop)
+
+        # Visual feedback bindings
         self.drop_frame.bind("<Enter>", self._on_drag_enter)
         self.drop_frame.bind("<Leave>", self._on_drag_leave)
 
@@ -66,6 +72,38 @@ class FileSelector(ctk.CTkFrame):
 
     def _on_drag_leave(self, event=None):
         self.drop_frame.configure(border_color=THEME["accent"])
+
+    def _on_drop(self, event):
+        """Handle files dropped onto the drop zone."""
+        self.drop_frame.configure(border_color=THEME["accent"])
+
+        # tkinterdnd2 returns paths in curly-brace format: {C:/path/file.txt} {C:/path/file 2.png}
+        data = event.data
+        paths = self._parse_dnd_paths(data)
+
+        file_infos = [get_file_info(p) for p in paths if os.path.exists(p)]
+        if file_infos:
+            self.on_files_selected(file_infos)
+
+    @staticmethod
+    def _parse_dnd_paths(data):
+        """Parse tkinterdnd2 path string into individual file paths."""
+        if not data:
+            return []
+
+        # tkinterdnd2 wraps paths with spaces in curly braces
+        # Strategy: split by } { pattern, then strip braces
+        paths = []
+        # Normalize separators
+        data = data.replace("\\", "/")
+
+        # Pattern: match either {path with spaces} or plain/path/no/spaces
+        pattern = re.compile(r"\{(.*?)\}|(\S+)")
+        for match in pattern.finditer(data):
+            path = match.group(1) or match.group(2)
+            if path:
+                paths.append(path)
+        return paths
 
     def _browse_files(self):
         """Open native file dialog for multi-select."""
