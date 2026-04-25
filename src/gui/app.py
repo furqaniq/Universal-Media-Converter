@@ -76,6 +76,16 @@ class App:
             screen.pack(fill="both", expand=True, padx=20, pady=20)
             self.current_screen = screen
 
+    def _on_close(self):
+        """Handle window close — cleanup temp files and exit."""
+        import shutil
+        from config import BASE_DIR
+        temp_dir = BASE_DIR / "temp"
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        self.root.destroy()
+
     def run(self):
         """Start the main event loop."""
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.mainloop()

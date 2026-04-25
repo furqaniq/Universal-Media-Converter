@@ -21,14 +21,43 @@ class FileQueue(ctk.CTkFrame):
         self._build_ui()
 
     def _build_ui(self):
-        # Header
+        # Header with action buttons
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(10, 5))
+
         header = ctk.CTkLabel(
-            self,
+            header_frame,
             text="Selected Files",
             font=(THEME["font_family"], 16, "bold"),
             text_color=THEME["text"],
         )
-        header.pack(anchor="w", pady=(10, 5))
+        header.pack(side="left", padx=5)
+
+        self.clear_btn = ctk.CTkButton(
+            header_frame,
+            text="Clear Completed",
+            font=(THEME["font_family"], 10),
+            fg_color=THEME["accent"],
+            hover_color=THEME["highlight"],
+            corner_radius=6,
+            width=110,
+            height=24,
+            command=self.clear_completed,
+        )
+        self.clear_btn.pack(side="right", padx=5)
+
+        self.stop_btn = ctk.CTkButton(
+            header_frame,
+            text="Stop All",
+            font=(THEME["font_family"], 10),
+            fg_color=THEME["error"],
+            hover_color="#c0392b",
+            corner_radius=6,
+            width=70,
+            height=24,
+            command=self._on_stop_all,
+        )
+        self.stop_btn.pack(side="right", padx=5)
 
         # Scrollable frame
         self.scroll_frame = ctk.CTkScrollableFrame(
@@ -47,6 +76,11 @@ class FileQueue(ctk.CTkFrame):
             text_color=THEME["text_secondary"],
         )
         self.empty_label.pack(pady=30)
+
+    def _on_stop_all(self):
+        """Emit stop signal to the parent handler."""
+        if hasattr(self, "on_stop") and self.on_stop:
+            self.on_stop()
 
     def add_files(self, file_infos):
         """Add multiple files to the queue."""

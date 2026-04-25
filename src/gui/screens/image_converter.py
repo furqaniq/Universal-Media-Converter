@@ -5,6 +5,7 @@ from tkinter import filedialog
 from config import THEME, IMAGE_OUTPUT_FORMATS, OUTPUTS_DIR
 from gui.components.file_selector import FileSelector
 from gui.components.file_queue import FileQueue
+from gui.components.toast import ToastManager
 from utils.validators import validate_file
 from converters.image_converter import ImageConverter
 
@@ -61,8 +62,10 @@ class ImageConverterScreen(ctk.CTkFrame):
         self.selector.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
         # Right: File queue
-        self.queue = FileQueue(content, on_remove=self._on_remove)
+        self.queue = FileQueue(content, on_remove=self._on_remove, on_stop=self._on_stop)
         self.queue.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+
+        self.toast = ToastManager(self)
 
         # Bottom: Options panel
         options_frame = ctk.CTkFrame(self, fg_color=THEME["card_bg"], corner_radius=THEME["border_radius"])
@@ -257,6 +260,12 @@ class ImageConverterScreen(ctk.CTkFrame):
     def _on_remove(self, path):
         pass
 
+    def _on_stop(self):
+        if self.converter:
+            self.converter.cancel()
+            self.toast.show("Conversion stopped", "warning")
+        self._reset_ui()
+
     def _start_conversion(self):
         files = self.queue.get_files()
         if not files:
@@ -291,7 +300,12 @@ class ImageConverterScreen(ctk.CTkFrame):
         self.after(0, self._reset_ui)
         success = sum(1 for _, ok, _ in results if ok)
         total = len(results)
-        print(f"Converted {success}/{total} files")
+        if success == total:
+            self.toast.show(f"All {total} images converted successfully!", "success")
+        elif success > 0:
+            self.toast.show(f"Converted {success}/{total} images. Check queue for errors.", "warning")
+        else:
+            self.toast.show("All conversions failed. Check console for details.", "error")
 
     def _reset_ui(self):
         self.convert_btn.configure(state="normal", text="Convert")
