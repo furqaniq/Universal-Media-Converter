@@ -2,6 +2,10 @@
 
 import customtkinter as ctk
 from config import APP_NAME, APP_WIDTH, APP_HEIGHT, THEME
+from gui.screens.dashboard import DashboardScreen
+from gui.screens.video_converter import VideoConverterScreen
+from gui.screens.image_converter import ImageConverterScreen
+from gui.screens.document_converter import DocumentConverterScreen
 
 
 class App:
@@ -20,12 +24,16 @@ class App:
         # Center window on screen
         self._center_window()
 
-        # Main container
+        # Main container frame for screen switching
         self.container = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.container.pack(fill="both", expand=True, padx=20, pady=20)
+        self.container.pack(fill="both", expand=True)
 
-        # Placeholder content for Phase 1
-        self._build_placeholder()
+        # Screens dictionary
+        self.screens = {}
+        self.current_screen = None
+
+        self._create_screens()
+        self.show_screen("dashboard")
 
     def _center_window(self):
         """Center the window on the screen."""
@@ -36,31 +44,37 @@ class App:
         y = (screen_height - APP_HEIGHT) // 2
         self.root.geometry(f"{APP_WIDTH}x{APP_HEIGHT}+{x}+{y}")
 
-    def _build_placeholder(self):
-        """Build placeholder UI for Phase 1."""
-        label = ctk.CTkLabel(
+    def _create_screens(self):
+        """Initialize all application screens."""
+        self.screens["dashboard"] = DashboardScreen(
             self.container,
-            text=APP_NAME,
-            font=(THEME["font_family"], THEME["header_font_size"], "bold"),
-            text_color=THEME["text"],
+            navigate_callback=self.show_screen,
         )
-        label.pack(pady=(100, 20))
 
-        subtitle = ctk.CTkLabel(
+        self.screens["video"] = VideoConverterScreen(
             self.container,
-            text="Desktop Media Converter — Phase 1 Initialized",
-            font=(THEME["font_family"], THEME["font_size"]),
-            text_color=THEME["text_secondary"],
+            back_callback=lambda: self.show_screen("dashboard"),
         )
-        subtitle.pack(pady=10)
 
-        version_label = ctk.CTkLabel(
+        self.screens["image"] = ImageConverterScreen(
             self.container,
-            text="Version 2.0 | Built with CustomTkinter",
-            font=(THEME["font_family"], 12),
-            text_color=THEME["text_secondary"],
+            back_callback=lambda: self.show_screen("dashboard"),
         )
-        version_label.pack(pady=10)
+
+        self.screens["document"] = DocumentConverterScreen(
+            self.container,
+            back_callback=lambda: self.show_screen("dashboard"),
+        )
+
+    def show_screen(self, screen_name):
+        """Switch to the specified screen."""
+        if self.current_screen:
+            self.current_screen.pack_forget()
+
+        screen = self.screens.get(screen_name)
+        if screen:
+            screen.pack(fill="both", expand=True, padx=20, pady=20)
+            self.current_screen = screen
 
     def run(self):
         """Start the main event loop."""
